@@ -17,5 +17,6 @@ fi
 docker run -d \
     --name infra-backend \
     --restart unless-stopped \
+    -e HOST_HOSTNAME=$(hostname) \
     -p "$BACKEND_PORT:$BACKEND_PORT" \
     "$BACKEND_IMAGE"

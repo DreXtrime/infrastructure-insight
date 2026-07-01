@@ -20,4 +20,5 @@ docker run -d \
     --restart unless-stopped \
     -p "$FRONTEND_PORT:$FRONTEND_PORT" \
     -e BACKEND_URL="$BACKEND_URL" \
+    -e HOST_HOSTNAME=$(hostname) \
     "$FRONTEND_IMAGE"
