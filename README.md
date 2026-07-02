@@ -58,6 +58,7 @@ balancer.
   - [Running a manual backup](#running-a-manual-backup)
   - [Restoring from backup](#restoring-from-backup)
 - [Security](#security)
+- [Bonus Features](#bonus-features)
 - [Project Structure](#project-structure)
 - [Author](#author)
 
@@ -365,6 +366,23 @@ All servers are hardened with the following:
 - Dedicated backup SSH key with rsync-only sudo access
 
 ---
+
+## Bonus Features
+
+### Apt Cache
+An optional apt-cacher-ng proxy can be configured via in `.env` to cache package downloads during provisioning. This significantly speeds up rebuilding VMs.
+
+### Windows Terminal Quick Connect
+A `termina.cmd` script opens SSH sessions to all five VMs in a single Windows Terminal split pane window. See the [Quick SSH Access](#quick-ssh-access) section for details.
+
+### Published Docker Images
+The monitoring application is maintained as a separate public repository with its own CI/CD pipeline. On every push to main, GitHub Actions runs automated tests against both the frontend and backend, builds the Docker images, and publishes them to GitHub Container Registry. The provisioning scripts pull the pre-built images directly from the registry rather than building on each VM.
+
+- [simple-infra-monitor](https://github.com/DreXtrime/simple-infra-monitor)
+- `ghcr.io/drextrime/infra-backend:latest`
+- `ghcr.io/drextrime/infra-frontend:latest`
+
+___
 
 ## Project Structure
 
