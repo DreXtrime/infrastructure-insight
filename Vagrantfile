@@ -1,23 +1,30 @@
 if File.exist?(".env")
   File.foreach(".env") do |line|
-    if line =~ /\ADEVOPS_PASSWORD=(.*)\z/
-      ENV['DEVOPS_PASSWORD'] = $1.strip.gsub(/\A['"]|['"]\z/, '')
-      break
-    end
+    next if line.strip.start_with?("#") || line.strip.empty?
+    key, value = line.strip.split("=", 2)
+    ENV[key] = value.gsub(/\A['"]|['"]\z/, '') if key && value
   end
 end
 
 Vagrant.configure("2") do |config|
   config.vm.box = "bento/ubuntu-24.04"
   config.vm.boot_timeout = 3600
-  devops_pub_key_path = File.expand_path("~/.ssh/devops_key.pub")
-  devops_password = ENV['DEVOPS_PASSWORD'] || (ARGV[0] != "destroy" && abort("ERROR: DEVOPS_PASSWORD not set. Run with DEVOPS_PASSWORD=yourpassword vagrant up"))
 
-  if !File.exist?(devops_pub_key_path) && ARGV[0] != "destroy"
-    abort "ERROR: SSH public key not found at \"~/.ssh/devops_key.pub\" Please generate one first."
+  devops_pub_key_path = File.expand_path("~/.ssh/devops_key.pub")
+  backup_pub_key_path = File.expand_path("~/.ssh/backup_key.pub")
+  backup_priv_key_path = File.expand_path("~/.ssh/backup_key")
+
+  devops_password = (ENV['DEVOPS_PASSWORD'] && !ENV['DEVOPS_PASSWORD'].empty?) ? ENV['DEVOPS_PASSWORD'] : (ARGV[0] != "destroy" && abort("ERROR: DEVOPS_PASSWORD not set. Add it to your .env file"))
+
+  if ARGV[0] != "destroy"
+    abort "ERROR: SSH public key not found at ~/.ssh/devops_key.pub" unless File.exist?(devops_pub_key_path)
+    abort "ERROR: Backup public key not found at ~/.ssh/backup_key.pub" unless File.exist?(backup_pub_key_path)
+    abort "ERROR: Backup private key not found at ~/.ssh/backup_key" unless File.exist?(backup_priv_key_path)
   end
 
   devops_pub_key = File.exist?(devops_pub_key_path) ? File.read(devops_pub_key_path).strip : ""
+  backup_pub_key = File.exist?(backup_pub_key_path) ? File.read(backup_pub_key_path).strip : ""
+
   config.vm.provider "virtualbox" do |vb|
     vb.customize ["modifyvm", :id, "--biosbootmenu", "disabled"]
     vb.customize ["modifyvm", :id, "--audio", "none"]
@@ -25,7 +32,8 @@ Vagrant.configure("2") do |config|
     vb.gui = false
   end
 
-  config.vm.provision "shell", path: "scripts/provision.sh", args: [devops_pub_key, devops_password]
+  config.vm.provision "shell", path: "scripts/provision.sh", args: [devops_pub_key, devops_password, backup_pub_key, ENV['APT_CACHE_URL'] || ""]
+
   config.vm.define "loadbalancer" do |lb|
     lb.vm.hostname = "loadbalancer"
     lb.vm.network "private_network", ip: "192.168.56.10"

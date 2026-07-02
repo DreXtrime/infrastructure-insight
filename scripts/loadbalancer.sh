@@ -15,8 +15,8 @@ events {
 
 http {
     upstream webservers {
-        server 192.168.56.11:8080;
-        server 192.168.56.12:8080;
+        server webserver01:8080;
+        server webserver02:8080;
     }
 
     server {
